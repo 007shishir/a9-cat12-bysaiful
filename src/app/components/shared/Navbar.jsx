@@ -1,22 +1,37 @@
-"use client"; // Required in Next.js App Router for interactive hooks
+"use client";
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image'; // Replaced standard img with Next.js Image component
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { authClient } from '../../../../lib/auth-client';
 
-const Navbar = ({ user, logoutUser }) => {
+
+const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
+  
+  // Dynamically listen to the real-time Better-Auth active user session
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user;
 
   const handleLogout = async () => {
     try {
-      await logoutUser();
-      toast.success("Logged out successfully");
-      router.push('/');
+      await authClient.signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            toast.success("Logged out successfully");
+            router.push('/');
+            router.refresh();
+          },
+          onError: (ctx) => {
+            toast.error(ctx.error.message || "Failed to log out");
+          }
+        }
+      });
     } catch (error) {
-      toast.error("Failed to log out");
+      toast.error("An unexpected error occurred while logging out");
     }
   };
 
@@ -60,10 +75,7 @@ const Navbar = ({ user, logoutUser }) => {
   );
 
   return (
-    /* The outer container handles the full-screen background */
     <div className="w-full bg-base-100 shadow-md sticky top-0 z-50 transition-colors duration-300">
-      
-      {/* The inner container restricts content width to max-w-7xl and centers it */}
       <div className="navbar max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Navbar Start: Logo & Mobile Hamburger Menu */}
@@ -92,14 +104,17 @@ const Navbar = ({ user, logoutUser }) => {
 
         {/* Navbar End: Dynamic Action Buttons / Profile Dropdown */}
         <div className="navbar-end gap-2">
-          {user ? (
+          {isPending ? (
+            /* Elegant Skeleton Loader to prevent UI layout shift while checking session */
+            <div className="w-10 h-10 rounded-full bg-base-content/10 animate-pulse" />
+          ) : user ? (
             /* Private Layout: Authenticated Profile Dropdown */
             <div className="dropdown dropdown-end">
               <label tabIndex={0} className="btn btn-ghost btn-circle avatar online">
                 <div className="w-10 h-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden relative">
                   <Image 
-                    src={user?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"} 
-                    alt={user?.displayName || "User profile"} 
+                    src={user?.image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"} 
+                    alt={user?.name || "User profile"} 
                     fill
                     sizes="40px"
                     className="object-cover"
@@ -109,7 +124,7 @@ const Navbar = ({ user, logoutUser }) => {
               </label>
               <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-3 shadow bg-base-100 rounded-box w-60 gap-1">
                 <li className="px-3 py-2 border-b border-base-200 mb-1">
-                  <p className="font-bold text-base-content truncate">{user?.displayName || "Anonymous Student"}</p>
+                  <p className="font-bold text-base-content truncate">{user?.name || "Anonymous Student"}</p>
                   <p className="text-xs text-base-content/60 truncate">{user?.email}</p>
                 </li>
                 <li className="lg:hidden"><Link href="/add-room">Add Room</Link></li>
