@@ -15,7 +15,7 @@ export default async function RoomDetailsPage({ params }) {
   let room = null;
   try {
     // Direct server-to-server fetch eliminates layout loading flashes
-    const res = await fetch(`http://localhost:5000/api/rooms/${roomId}`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/rooms/${roomId}`, {
       cache: 'no-store' // Keep data real-time for booking metric synchronization
     });
 

@@ -31,7 +31,7 @@ const MyListingsPage = () => {
       if (!user?.id) return;
       
       try {
-        const response = await fetch('http://localhost:5000/api/my-listings', {
+const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/my-listings`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

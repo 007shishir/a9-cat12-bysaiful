@@ -35,7 +35,7 @@ export default function MyBookingsPage() {
     // 2. Fetch bookings directly inside the effect to prevent render loops
     const fetchUserBookings = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/my-bookings', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/my-bookings`, {
           method: 'GET',
           headers: { 
             'Content-Type': 'application/json', 
@@ -63,7 +63,7 @@ export default function MyBookingsPage() {
     if (!targetBooking || !userId) return;
     setIsActionLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/bookings/${targetBooking._id}/cancel`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/bookings/${targetBooking._id}/cancel`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json', 
@@ -79,7 +79,7 @@ export default function MyBookingsPage() {
       
       // Safe state refresh after action completes
       setIsDataLoading(true);
-      const refreshRes = await fetch('http://localhost:5000/api/my-bookings', {
+      const refreshRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/my-bookings`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json', 'x-user-id': userId }
       });

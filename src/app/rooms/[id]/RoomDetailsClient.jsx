@@ -25,7 +25,7 @@ export default function RoomDetailsClient({ initialRoomData, roomId }) {
   // Simple client helper to refresh data when updates occur
   const refreshRoomData = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/rooms/${roomId}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/rooms/${roomId}`);
       if (res.ok) {
         const result = await res.json();
         setRoom(result.data);
@@ -43,7 +43,7 @@ export default function RoomDetailsClient({ initialRoomData, roomId }) {
     }
     setIsActionLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/bookings', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
         body: JSON.stringify({ roomId, startTime: data.startTime, endTime: data.endTime })
@@ -64,7 +64,7 @@ export default function RoomDetailsClient({ initialRoomData, roomId }) {
   const onEditSubmit = async (data) => {
     setIsActionLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/rooms/${roomId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/rooms/${roomId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
         body: JSON.stringify(data)
@@ -86,7 +86,7 @@ export default function RoomDetailsClient({ initialRoomData, roomId }) {
     if (!window.confirm("Are you completely sure you want to permanently delete this listing asset?")) return;
     setIsActionLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/rooms/${roomId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/rooms/${roomId}`, {
         method: 'DELETE',
         headers: { 'x-user-id': user.id }
       });
