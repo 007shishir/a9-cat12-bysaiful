@@ -51,6 +51,7 @@ const AddRoomForm = ({ user }) => {
           'Content-Type': 'application/json',
           'x-user-id': user.id // Safe header authorization pass mapping
         },
+        credentials: 'include',
         body: JSON.stringify(formattedPayload),
       });
 

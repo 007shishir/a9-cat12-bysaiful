@@ -25,7 +25,9 @@ export default function RoomDetailsClient({ initialRoomData, roomId }) {
   // Simple client helper to refresh data when updates occur
   const refreshRoomData = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/rooms/${roomId}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/rooms/${roomId}`, {
+        credentials: 'include'
+      });
       if (res.ok) {
         const result = await res.json();
         setRoom(result.data);
@@ -46,6 +48,7 @@ export default function RoomDetailsClient({ initialRoomData, roomId }) {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+        credentials: 'include',
         body: JSON.stringify({ roomId, startTime: data.startTime, endTime: data.endTime })
       });
       const out = await res.json();
@@ -67,6 +70,7 @@ export default function RoomDetailsClient({ initialRoomData, roomId }) {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/rooms/${roomId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+        credentials: 'include',
         body: JSON.stringify(data)
       });
       const out = await res.json();
@@ -88,7 +92,8 @@ export default function RoomDetailsClient({ initialRoomData, roomId }) {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/rooms/${roomId}`, {
         method: 'DELETE',
-        headers: { 'x-user-id': user.id }
+        headers: { 'x-user-id': user.id },
+        credentials: 'include'
       });
       const out = await res.json();
       if (!res.ok) throw new Error(out.message);

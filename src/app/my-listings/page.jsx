@@ -36,7 +36,8 @@ const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/my-list
           headers: {
             'Content-Type': 'application/json',
             'x-user-id': user.id // Send active owner reference safely down to server query execution
-          }
+          },
+          credentials: 'include'
         });
 
         const result = await response.json();

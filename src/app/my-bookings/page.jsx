@@ -31,7 +31,8 @@ export default function MyBookingsPage() {
         headers: { 
           'Content-Type': 'application/json', 
           'x-user-id': userId 
-        }
+        },
+        credentials: 'include'
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.message || "Failed to load bookings.");
@@ -68,7 +69,8 @@ export default function MyBookingsPage() {
         headers: { 
           'Content-Type': 'application/json', 
           'x-user-id': userId 
-        }
+        },
+        credentials: 'include'
       });
       const out = await res.json();
       if (!res.ok) throw new Error(out.message || "Cancellation rejected.");

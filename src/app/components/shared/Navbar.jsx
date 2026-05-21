@@ -16,11 +16,43 @@ const Navbar = () => {
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
 
+  // Sync the Better-Auth session with the backend JWT cookie dynamically
+  React.useEffect(() => {
+    const syncBackendSession = async () => {
+      if (user?.id) {
+        try {
+          await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/jwt`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ userId: user.id }),
+            credentials: 'include'
+          });
+        } catch (err) {
+          console.error("Failed to sync backend JWT session cookie:", err);
+        }
+      }
+    };
+    if (!isPending) {
+      syncBackendSession();
+    }
+  }, [user, isPending]);
+
   const handleLogout = async () => {
     try {
       await authClient.signOut({
         fetchOptions: {
-          onSuccess: () => {
+          onSuccess: async () => {
+            // Clear the backend JWT cookie on logout success
+            try {
+              await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/logout`, {
+                method: 'POST',
+                credentials: 'include'
+              });
+            } catch (err) {
+              console.error("Failed to clear backend JWT cookie on logout:", err);
+            }
             toast.success("Logged out successfully");
             router.push('/');
             router.refresh();
