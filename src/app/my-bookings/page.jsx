@@ -1,14 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { authClient } from '../../../lib/auth-client';
-
-
-
 
 export default function MyBookingsPage() {
   const router = useRouter();
@@ -21,49 +18,52 @@ export default function MyBookingsPage() {
 
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user;
-  const userId = user?.id; 
+  const userId = user?.id;
 
-  // Combined tracking effect: Handles route protection and loop-free data fetching
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  // 1. Isolated Fetch Handler wrapped in useCallback to prevent loop hooks
+  const fetchUserBookings = useCallback(async () => {
+    if (!userId || !backendUrl) return;
+    try {
+      const res = await fetch(`${backendUrl}/api/my-bookings`, {
+        method: 'GET',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'x-user-id': userId 
+        }
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message || "Failed to load bookings.");
+      
+      setBookings(result.data || []);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      toast.error(err.message || "Could not retrieve booking details.");
+    } finally {
+      setIsDataLoading(false);
+    }
+  }, [userId, backendUrl]);
+
+  // 2. Clear Auth Synchronizer & Initializer Effect Lifecycle
   useEffect(() => {
-    // 1. Handle auth route redirection protection
     if (!isPending && !user) {
       toast.error("Please login to view your secured session slots.");
       router.push('/login?callbackUrl=/my-bookings');
       return;
     }
 
-    // 2. Fetch bookings directly inside the effect to prevent render loops
-    const fetchUserBookings = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/my-bookings`, {
-          method: 'GET',
-          headers: { 
-            'Content-Type': 'application/json', 
-            'x-user-id': userId 
-          }
-        });
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.message);
-        
-        setBookings(result.data || []);
-      } catch (err) {
-        console.error("Fetch error:", err);
-        toast.error(err.message || "Could not retrieve booking details.");
-      } finally {
-        setIsDataLoading(false);
-      }
-    };
-
     if (!isPending && userId) {
       fetchUserBookings();
     }
-  }, [userId, isPending, user, router]); // Clean primitives array ensures no cyclical multi-triggers
+  }, [userId, isPending, user, router, fetchUserBookings]);
 
+  // 3. Instant UI Local State Mutation Update (No redundant network requests!)
   const handleConfirmCancellation = async () => {
-    if (!targetBooking || !userId) return;
+    if (!targetBooking || !userId || !backendUrl) return;
     setIsActionLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/bookings/${targetBooking._id}/cancel`, {
+      const res = await fetch(`${backendUrl}/api/bookings/${targetBooking._id}/cancel`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json', 
@@ -77,26 +77,22 @@ export default function MyBookingsPage() {
       setShowCancelModal(false);
       setTargetBooking(null);
       
-      // Safe state refresh after action completes
-      setIsDataLoading(true);
-      const refreshRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/my-bookings`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': userId }
-      });
-      const refreshResult = await refreshRes.json();
-      if (refreshRes.ok) setBookings(refreshResult.data || []);
+      // Update local state directly instead of re-fetching everything from the server
+      setBookings(prevBookings => 
+        prevBookings.map(b => b._id === targetBooking._id ? { ...b, status: 'cancelled' } : b)
+      );
+
     } catch (err) {
-      toast.error(err.message);
+      toast.error(err.message || "An error occurred during cancellation.");
     } finally {
       setIsActionLoading(false);
-      setIsDataLoading(false);
     }
   };
 
   const isEligibleToCancel = (booking) => {
     if (booking.status === 'cancelled') return false;
     const startTimeStamp = new Date(booking.startTime).getTime();
-    const currentDeviceTime = new Date().getTime();
+    const currentDeviceTime = Date.now(); // More performant alternative to new Date().getTime()
     return startTimeStamp > currentDeviceTime;
   };
 
@@ -219,7 +215,6 @@ export default function MyBookingsPage() {
           </div>
         </div>
       )}
-
     </section>
   );
 }
